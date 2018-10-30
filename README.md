@@ -4,6 +4,9 @@
 
 Various aws cli tools I made to help me in my day to day.
 
+install the `requirements.txt` to run any of these tools.
+`pip3 install -r requirements.txt`
+
 ---
 
 ### Tools
