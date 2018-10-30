@@ -10,7 +10,7 @@ Various aws cli tools I made to help me in my day to day.
 
 #### Python w/boto
 
-* awsSearch.py    - tool to search/find ec2 instances in all regions and report back details. output from script can be used with sshotgun.py
+* [awsSearch](./awsSearch) - tool to search/find ec2 instances in all regions and report back details. output from script can be used with sshotgun.py
 ```
  $ ./awsSearch.py --profile control --verbose --search terraform
 
@@ -32,7 +32,7 @@ index: 1
 1 Total count
 ```
 
-* awsStatusChk.py - tool to list out any ec2 instances that are marked for maintenance.
+* [awsStatusChk](./awsStatusChk) - tool to list out any ec2 instances that are marked for maintenance.
 ```
  $ ./awsStatusChk.py
 
@@ -49,7 +49,7 @@ AWSProfile : dev
 1 Total count
 ```
 
-* s3BucketSize.py - tool to list out any s3 buckets larger than 1 GB with a cost estimate.
+* [s3BucketSize](./s3BucketSize) - tool to list out any s3 buckets larger than 1 GB with a cost estimate.
 ```
  $ (./s3BucketSize.py --profile control) | sort -nrk 3,3 | column -t
 control  some-bucket-1   11  GB  $  0.25  mo
@@ -58,7 +58,7 @@ control  some-bucket-3   4   GB  $  0.09  mo
 control  some-bucket-4   1   GB  $  0.02  mo
 ```
 
-* sshotgun.py     - tool that uses the non-verose output of `awsSearch.py` as input and mass runs a command on ec2 instances. 2200+ instnaces across multiple AWS accounts took under 20 seconds.
+* [sshotgun](./sshotgun) - tool that uses the non-verose output of `awsSearch.py` as input and mass runs a command on ec2 instances. 2200+ instnaces across multiple AWS accounts took under 20 seconds.
 ```
  $ time ./sshotgun.py --awsfile list --awsuser centos --command "hostname; uptime"
 
@@ -115,5 +115,5 @@ sys	0m0.102s
 
 #### Bash
 
-* role-switcher   - tool for use with assume role IAM accounts, add your accounts to the script and this tool will open a formatted url that will auto-fill the assume-role form.
+* [role-switcher](./role-switcher) - tool for use with assume role IAM accounts, add your accounts to the script and this tool will open a formatted url that will auto-fill the assume-role form.
 
