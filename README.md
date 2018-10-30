@@ -15,7 +15,7 @@ install the `requirements.txt` to run any of these tools.
 
 * [awsSearch](./awsSearch) - tool to search/find ec2 instances in all regions and report back details. output from script can be used with sshotgun.py
 ```
- $ ./awsSearch.py --profile control --verbose --search terraform
+ $ ./awsSearch --profile control --verbose --search terraform
 
 i-0deadbeef2ff888,control,us-east-1d,172.30.333.104,running,2018-07-31T17:38:12+00:00,t2.medium,control-pem
 island: control
@@ -37,7 +37,7 @@ index: 1
 
 * [awsStatusChk](./awsStatusChk) - tool to list out any ec2 instances that are marked for maintenance.
 ```
- $ ./awsStatusChk.py
+ $ ./awsStatusChk
 
 Code : instance-stop
 Description : [Completed] The instance is running on degraded hardware
@@ -54,7 +54,7 @@ AWSProfile : dev
 
 * [s3BucketSize](./s3BucketSize) - tool to list out any s3 buckets larger than 1 GB with a cost estimate.
 ```
- $ (./s3BucketSize.py --profile control) | sort -nrk 3,3 | column -t
+ $ (./s3BucketSize --profile control) | sort -nrk 3,3 | column -t
 control  some-bucket-1   11  GB  $  0.25  mo
 control  some-bucket-2   4   GB  $  0.09  mo
 control  some-bucket-3   4   GB  $  0.09  mo
@@ -63,7 +63,7 @@ control  some-bucket-4   1   GB  $  0.02  mo
 
 * [sshotgun](./sshotgun) - tool that uses the non-verose output of `awsSearch.py` as input and mass runs a command on ec2 instances. 2200+ instnaces across multiple AWS accounts took under 20 seconds.
 ```
- $ time ./sshotgun.py --awsfile list --awsuser centos --command "hostname; uptime"
+ $ time ./sshotgun --awsfile list --awsuser centos --command "hostname; uptime"
 
 Failed to ssh to host {'hostname': '172.30.131.89', 'username': 'centos', 'pkey': <paramiko.rsakey.RSAKey object at 0x1103949e8>, 'timeout': 2, 'allow_agent': False, 'auth_timeout': 2, 'banner_timeout': 2}
 Error Msg: Authentication failed.
