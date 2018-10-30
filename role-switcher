@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+set -eou pipefail
+
+searchstring=${1:-"null"}
+
+aws_accounts=(000000001,control 000000002,dev 000000003,production)
+
+printf "\nControl Plane login page: https://YOUR_CONTROL_PLANE.signin.aws.amazon.com/console\n"
+printf -- '%s\n' "${aws_accounts[@]}" | grep -q "${searchstring}" || printf "\nAvailable AWS accounts:\n"; printf -- '%s\n' "${aws_accounts[@]}" | awk -F',' '{print $2}'; echo
+
+if [[ -d "/Applications/Google Chrome.app" ]]; then 
+  INSTALLED="Google Chrome"
+elif [[ -d "/Applications/Firefox.app" ]]; then 
+  INSTALLED="firefox"
+elif [[ -d "/Applications/Safari.app" ]]; then 
+  INSTALLED="safari"
+else
+  INSTALLED="none"
+  printf "You don't have a supported browser (Chrome/Firefox/Safari) installed."
+  exit 1
+fi
+
+for aws_account in ${aws_accounts[@]}; do
+  aws_account_id=$(echo "${aws_account}" | awk -F',' '{print $1}')
+  display_name=$(echo "${aws_account}" | awk -F',' '{print $2}')
+
+  if (echo "${display_name}" | grep -q "^${searchstring}"); then
+    #printf "${display_name}\nhttps://signin.aws.amazon.com/switchrole?account=${aws_account_id}&roleName=terralign/human-admin&displayName=${display_name}\n\n"
+    open -a "${INSTALLED}" "https://signin.aws.amazon.com/switchrole?account=${aws_account_id}&roleName=terralign/human-admin&displayName=${display_name}"
+  fi
+done

@@ -1,0 +1,135 @@
+#!/usr/bin/env python3
+
+import sys, os, string, threading, argparse, csv, re
+import paramiko
+import queue
+
+def _worker():
+    global self_hostgood
+    global self_hostfailed
+    self_hostfailed = 0
+    self_hostgood = 0
+    while True:
+        item = q.get()
+        #print(str(item))
+        if item is None:
+            break
+        doworkresults = _dowork(mysshcfg=item)
+        if "Failed to ssh to host" in doworkresults:
+            self_hostfailed += 1
+        else:
+            self_hostgood += 1
+        print("{results}".format(results=doworkresults))
+        q.task_done()
+
+def _dowork(**kwargs):
+    self_sshcfg = kwargs['mysshcfg']
+
+    try:
+        with paramiko.SSHClient() as ssh:
+            #ssh = paramiko.SSHClient()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh.connect(**self_sshcfg)
+            stdin, stdout, stderr = ssh.exec_command(self_command)
+            stdin.write('xy\n')
+            stdin.flush()
+
+            with outlock:
+                #print("Output: {cmdoutput}".format(cmdoutput=stdout.readlines()))
+                return("Host Config: {sshcfg}\nCommand Output: {cmdoutput}\n".format(sshcfg=str(self_sshcfg), cmdoutput=stdout.readlines()))
+    except Exception as e:
+        #print("Error Msg: {errormsg}".format(errormsg=e))
+        return("Failed to ssh to host {sshcfg}\nError Msg: {errormsg}\n".format(sshcfg=str(self_sshcfg), errormsg=e))
+
+
+def _main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--version', action='version', version='%(prog)s 1.0')
+    parser.add_argument('--awshost', help='Single host option')
+    parser.add_argument('--awsuser', help='ec2 user name ubuntu, centos or ec2-user')
+    parser.add_argument('--command', help='ssh command to run on host')
+    parser.add_argument('--awsfile', help='awsSearch output file')
+    parser.add_argument('--filter', help='regex filter down the aws file')
+    args = parser.parse_args()
+
+    self_num = 0
+    self_sshhostslist = []
+    self_keynamelist = []
+    self_fulllinelist = []
+    threads = []
+    global self_keyfailed
+    global self_hosttotal
+    global self_command
+    global concurrent
+    global q
+    global outlock
+    concurrent = 25 * 2
+    q = queue.Queue(concurrent)
+    outlock = threading.Lock()
+    self_keyfailed = 0
+    self_hosttotal = 0
+
+    if args.command:
+        self_command = args.command
+    else:
+        self_command = "uptime;"
+
+    if args.awsuser:
+        self_awsuser = args.awsuser
+    else:
+        self_awsuser = "centos"
+
+    if args.filter:
+        self_filter_string = args.filter
+    else:
+        self_filter_string = '.*'
+    self_exp = re.compile(self_filter_string, re.IGNORECASE)
+
+    if os.path.exists(args.awsfile):
+        with open(args.awsfile) as csvDataFile:
+            csvReader = csv.reader(csvDataFile)
+            for row in csvReader:
+                if re.search(self_exp, str(row)):
+                    self_sshhostslist.append(row[3].split())
+                    self_keynamelist.append(row[7].split())
+                    self_fulllinelist.append(str(row))
+    else:
+        print("You need to pass in a file: {filename}").format(filename=args.awsfile)
+        exit(1)
+
+    print()
+
+    for z in range(concurrent):
+        t = threading.Thread(target=_worker)
+        t.start()
+        threads.append(t)
+
+    for self_sshhost in self_sshhostslist:
+        self_sshhost = str(self_sshhost[0])
+        #self_fullline = self_fulllinelist[self_num]
+        self_keyname = self_keynamelist[self_num]
+        self_hosttotal += 1
+        self_num = self_num + 1
+        self_pemfilepath = "~/.ssh/" + self_keyname[0] + ".pem"
+        if os.path.exists(os.path.expanduser(self_pemfilepath)):
+            self_userkeyfile = os.path.expanduser(self_pemfilepath)
+            #print("\n\n{keyfile}\n{hostline}".format(keyfile=self_userkeyfile, hostline=str(self_fullline)))
+
+            self_keyname = paramiko.RSAKey.from_private_key_file(self_userkeyfile)
+            self_sshcfg = {'hostname':self_sshhost, 'username': self_awsuser, 'pkey': self_keyname, 'timeout': 2, 'allow_agent': False, 'auth_timeout': 2, 'banner_timeout': 2}
+            q.put(self_sshcfg)
+        else:
+            print("Error Msg: Failed to find key {pkey} for hostname {hostname}\n".format(pkey=self_keyname[0], hostname=self_sshhost))
+            self_keyfailed += 1
+    q.join()
+
+    for i in range(concurrent):
+        q.put(None)
+
+    for t in threads:
+        t.join()
+
+    print("{self_hostgood}/{self_hosttotal} Succeeded\nFailed ssh connect to: {self_hostfailed}\nSSH key not found for: {self_keyfailed}\n".format(self_hosttotal=self_hosttotal, self_hostfailed=self_hostfailed, self_keyfailed=self_keyfailed, self_hostgood=self_hostgood))
+
+if __name__ == '__main__':
+    _main()
