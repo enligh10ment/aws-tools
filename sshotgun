@@ -69,6 +69,10 @@ def _main():
     self_keyfailed = 0
     self_hosttotal = 0
 
+    if not args.awsfile:
+      parser.print_help(sys.stderr)
+      exit(1)
+
     if args.command:
         self_command = args.command
     else:
